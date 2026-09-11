@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-11
+
+### Added
+
+- Python 3.14 in the test matrix and in the package classifiers. Nothing
+  in the package changed; this records where it is known to run.
+
 ## [0.2.0] - 2026-09-11
 
 Every parameter in the catalogue was checked against the SOLIDWORKS 2027 help,
@@ -117,6 +124,7 @@ First release.
   `Vocabulary`.
 - Write only. No reading of existing tables, no COM integration, no CLI.
 
-[Unreleased]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ivanperezdesigner/swdesigntables/releases/tag/v0.1.0
