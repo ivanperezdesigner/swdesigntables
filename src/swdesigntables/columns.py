@@ -44,7 +44,17 @@ __all__ = [
     "suppress_new_features",
     "suppress_new_components",
     "sw_property",
+    "mass",
+    "center_of_mass",
     "tolerance",
+    "base_part_config",
+    "material",
+    "body_material",
+    "hole_size",
+    "profile_size",
+    "equation_enable",
+    "sketch_relation_state",
+    "skip_instances",
     "raw",
 ]
 
@@ -128,7 +138,11 @@ def global_variable(name: str) -> Column:
 
 
 def state(feature: str) -> Column:
-    """Suppress or unsuppress a feature, as in ``$STATE@Draft2``."""
+    """Suppress or unsuppress a feature, as in ``$STATE@Draft2``.
+
+    The same syntax covers sketches (``$STATE@Sketch1``) and lights
+    (``$STATE@Directional1``). Values are ``S``/``U``, or ``1``/``0``.
+    """
     return _build(get_parameter("state"), feature=feature)
 
 
@@ -159,7 +173,7 @@ def component_config(component: str, instance: int | None = None) -> Column:
     )
 
 
-# --- documented parameters ----------------------------------------------
+# --- assemblies, materials and the rest ---------------------------------
 
 
 def component_state(component: str, instance: int | None = None) -> Column:
@@ -170,21 +184,35 @@ def component_state(component: str, instance: int | None = None) -> Column:
 
 
 def component_visibility(component: str, instance: int | None = None) -> Column:
-    """Show or hide a component, as in ``$SHOW@Arm<1>``."""
+    """Show or hide a component, as in ``$SHOW@Arm<1>``.
+
+    Obsolete. The SOLIDWORKS help states that ``$SHOW`` is obsolete and that
+    component visibility belongs to display states. It stays here so an old
+    table still round-trips through :func:`parse_header`; using it emits an
+    ``obsolete-parameter`` warning.
+    """
     return _build(
         get_parameter("component_visibility"), component=_component_ref(component, instance)
     )
 
 
 def component_fixed(component: str, instance: int | None = None) -> Column:
-    """Fix or float a component, as in ``$FIXED@Arm<1>``."""
+    """Fix or float a component, as in ``$FIXED@Arm``.
+
+    The documented syntax names the component with no instance number, so
+    ``instance`` defaults to None. Pass one only if your model needs it.
+    """
     return _build(
         get_parameter("component_fixed"), component=_component_ref(component, instance)
     )
 
 
 def component_display_state(component: str, instance: int | None = None) -> Column:
-    """Choose a component's display state."""
+    """Choose one component's display state.
+
+    Unverified: the help documents ``$DISPLAYSTATE`` for the configuration,
+    never for a single component. :func:`display_state` is the documented one.
+    """
     return _build(
         get_parameter("component_display_state"),
         component=_component_ref(component, instance),
@@ -217,23 +245,116 @@ def never_expand_in_bom() -> Column:
 
 
 def suppress_new_features() -> Column:
-    """The ``$SUPPRESS NEW FEATURES`` column, taking ``Y``/``N``."""
+    """The ``$SUPPRESS NEW FEATURES`` column, taking ``Y``/``N``.
+
+    Unverified: no SOLIDWORKS documentation consulted describes it.
+    """
     return _build(get_parameter("suppress_new_features"))
 
 
 def suppress_new_components() -> Column:
-    """The ``$SUPPRESS NEW COMPONENTS`` column, taking ``Y``/``N``."""
+    """The ``$SUPPRESS NEW COMPONENTS`` column, taking ``Y``/``N``.
+
+    Unverified: no SOLIDWORKS documentation consulted describes it.
+    """
     return _build(get_parameter("suppress_new_components"))
 
 
 def sw_property(name: str) -> Column:
-    """A SOLIDWORKS-computed property such as ``$SW-Mass``. Read only."""
+    """Override a computed mass property, as in ``$SW-Mass``.
+
+    Not read only: a value here overrides what SOLIDWORKS calculates, the
+    same as the Override Mass Properties dialog box. A blank cell keeps the
+    calculated value. See :func:`mass` and :func:`center_of_mass`.
+    """
     return _build(get_parameter("sw_property"), name=name)
 
 
+def mass() -> Column:
+    """The ``$SW-MASS`` column, overriding the calculated mass."""
+    return sw_property("MASS")
+
+
+def center_of_mass() -> Column:
+    """The ``$SW-COG`` column. Values are written ``x, y, z``."""
+    return sw_property("COG")
+
+
 def tolerance(name: str, feature: str) -> Column:
-    """Set a dimension's tolerance, as in ``$TOLERANCE@D1@Sketch1``."""
+    """Set a dimension's tolerance, as in ``$TOLERANCE@D1@Sketch1``.
+
+    Values are tolerance keywords: ``NONE``, ``BASIC``, ``MIN``, ``MAX``,
+    ``SYMMETRIC;max``, ``BILATERAL;max;min``, ``LIMIT;max;min``, or one of
+    the ``FIT`` forms. An empty cell means no tolerance.
+    """
     return _build(get_parameter("tolerance"), dimension=name, feature=feature)
+
+
+def base_part_config(part: str) -> Column:
+    """Choose a base part's configuration, as in ``$CONFIGURATION@washer``.
+
+    Parts only. Same prefix as :func:`component_config`, told apart by the
+    instance number: a component always carries one, a base part never does.
+    """
+    return _build(get_parameter("base_part_config"), part=part)
+
+
+def material(part: str) -> Column:
+    """Set a part's material, as in ``$LIBRARY:MATERIAL@Bracket``.
+
+    The cell holds library and material together, as in
+    ``SOLIDWORKS Materials:Plain Carbon Steel``. A blank cell keeps whatever
+    material the configuration had when it was created.
+    """
+    return _build(get_parameter("material"), part=part)
+
+
+def body_material(body: str, part: str) -> Column:
+    """Set the material of one body of a multibody part."""
+    return _build(get_parameter("body_material"), body=body, part=part)
+
+
+def hole_size(feature: str) -> Column:
+    """Set a Hole Wizard hole size, as in ``$HW-SIZE@CBORE1``.
+
+    Values are the sizes listed in the Hole Specification PropertyManager.
+    An empty cell means the smallest size available for that hole type.
+    """
+    return _build(get_parameter("hole_size"), feature=feature)
+
+
+def profile_size(target: str) -> Column:
+    """Set a weldment or structure system profile size.
+
+    ``target`` is a feature name or a structure member name.
+    """
+    return _build(get_parameter("profile_size"), target=target)
+
+
+def equation_enable(relation_id: int | str) -> Column:
+    """Enable or disable one equation, as in ``$ENABLE@1@Equations``.
+
+    ``relation_id`` is the unique equation identifier shown in the Equations
+    dialog box when 'Display unique equation identifier' is on. Values are
+    ``Y``/``N``.
+    """
+    return _build(get_parameter("equation_enable"), relation_id=relation_id)
+
+
+def sketch_relation_state(relation: str, sketch: str) -> Column:
+    """Suppress a sketch relation, as in ``$STATE@Fixed1@Sketch2``."""
+    return _build(
+        get_parameter("sketch_relation_state"), relation=relation, sketch=sketch
+    )
+
+
+def skip_instances(pattern: str) -> Column:
+    """Skip pattern instances, as in ``$SKIP@LPattern1``.
+
+    The value lists instance coordinates separated by semicolons, as in
+    ``10,1;10,2;``.
+    """
+    return _build(get_parameter("skip_instances"), pattern=pattern)
 
 
 # --- escape hatch --------------------------------------------------------

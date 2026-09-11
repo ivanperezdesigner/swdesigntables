@@ -86,7 +86,7 @@ def build_profile_table() -> sw.DesignTable:
             DRAFT: sw.State.from_bool(index == 0),
             SHRINK: 0.4,
             SHRINK_STATE: sw.UNSUPPRESSED,
-            QTY: sw.Expression("hole_pitch * 2"),
+            QTY: 12,
             MATERIAL: "6061-T6",
             PART_NUMBER: f"MFP-{index + 1:05d}",
         }
@@ -131,8 +131,8 @@ def test_profile_table_first_row(reload_table):
     assert value_at(3, "$STATE@Draft2") == "S"
     assert value_at(3, "$PRP@PartNo") == "MFP-00001"
     assert value_at(3, "$DESCRIPTION") == "Profile G01"
-    # The equation lands as literal text, not an Excel formula.
-    assert value_at(3, "$VALUE@hole_qty@Equations") == "=hole_pitch * 2"
+    # A global variable takes a constant decimal, never an equation.
+    assert value_at(3, "$VALUE@hole_qty@Equations") == 12
     # Hole group 2 is suppressed on the first configuration only.
     assert value_at(3, "$STATE@hole2") == "S"
     assert value_at(4, "$STATE@hole2") == "U"

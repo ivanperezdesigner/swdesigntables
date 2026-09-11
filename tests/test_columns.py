@@ -137,3 +137,79 @@ def test_register_parameter_adds_a_usable_column():
 def test_unknown_parameter_is_named_clearly():
     with pytest.raises(sw.UnknownParameterError, match="No parameter named"):
         sw.column("nonexistent")
+
+
+# --- the parameters documented by the SOLIDWORKS help --------------------
+
+
+DOCUMENTED_HEADERS = [
+    (sw.dimension("Length", "Boss-Extrude1"), "Length@Boss-Extrude1"),
+    (sw.global_variable("width"), "$VALUE@width@Equations"),
+    (sw.state("Draft2"), "$STATE@Draft2"),
+    (sw.prop("Material"), "$PRP@Material"),
+    (sw.description(), "$DESCRIPTION"),
+    (sw.parent(), "$PARENT"),
+    (sw.display_state(), "$DISPLAYSTATE"),
+    (sw.comment(), "$COMMENT"),
+    (sw.color(), "$COLOR"),
+    (sw.part_number(), "$PARTNUMBER"),
+    (sw.user_notes(), "$USER_NOTES"),
+    (sw.never_expand_in_bom(), "$NEVER_EXPAND_IN_BOM"),
+    (sw.tolerance("D1", "Extrude1"), "$TOLERANCE@D1@Extrude1"),
+    (sw.component_state("Screw", 2), "$STATE@Screw<2>"),
+    (sw.component_config("Arm", 1), "$CONFIGURATION@Arm<1>"),
+    (sw.component_fixed("Screw"), "$FIXED@Screw"),
+    (sw.base_part_config("washer"), "$CONFIGURATION@washer"),
+    (sw.material("Bracket"), "$LIBRARY:MATERIAL@Bracket"),
+    (sw.body_material("Body1", "Bracket"), "$LIBRARY:MATERIAL@Body1@Bracket"),
+    (sw.hole_size("CBORE1"), "$HW-SIZE@CBORE1"),
+    (sw.profile_size("Member1"), "$PROFILE_SIZE@Member1"),
+    (sw.equation_enable(1), "$ENABLE@1@Equations"),
+    (sw.sketch_relation_state("Fixed1", "Sketch2"), "$STATE@Fixed1@Sketch2"),
+    (sw.skip_instances("LPattern1"), "$SKIP@LPattern1"),
+    (sw.mass(), "$SW-MASS"),
+    (sw.center_of_mass(), "$SW-COG"),
+]
+
+
+@pytest.mark.parametrize("column, header", DOCUMENTED_HEADERS)
+def test_documented_header_spelling(column, header):
+    """Each spelling comes from a SOLIDWORKS help page of its own."""
+    assert column.header() == header
+    assert column.status is Status.VERIFIED
+
+
+@pytest.mark.parametrize("column, header", DOCUMENTED_HEADERS)
+def test_documented_header_round_trips(column, header):
+    assert sw.parse_header(header).spec.name == column.spec.name
+
+
+def test_a_component_config_without_an_instance_reads_as_a_base_part():
+    """$CONFIGURATION@X is a base part in a part, a component in an assembly.
+
+    The instance number is what tells them apart, so a header without one
+    parses as the base part parameter.
+    """
+    assert sw.parse_header("$CONFIGURATION@washer").spec.name == "base_part_config"
+    assert sw.parse_header("$CONFIGURATION@washer<1>").spec.name == "component_config"
+
+
+def test_show_is_kept_but_marked_obsolete():
+    assert sw.component_visibility("Screw", 2).status is Status.OBSOLETE
+
+
+def test_component_display_state_is_not_documented():
+    assert sw.component_display_state("Screw", 2).status is Status.UNVERIFIED
+
+
+@pytest.mark.parametrize(
+    "column",
+    [sw.suppress_new_features(), sw.suppress_new_components()],
+)
+def test_suppress_new_parameters_are_unverified(column):
+    assert column.status is Status.UNVERIFIED
+
+
+def test_mass_accepts_a_value():
+    """$SW-MASS overrides the calculated mass; it is not a read-only column."""
+    assert sw.mass().value_kind is not sw.ValueKind.READ_ONLY

@@ -148,7 +148,7 @@ def test_equations_dimension_conflict():
 
 
 def test_unverified_parameter_warns():
-    table = lenient("M", columns=[sw.color()])
+    table = lenient("M", columns=[sw.component_display_state("Screw", 2)])
     table.add_configuration("A")
     assert "unverified-parameter" in codes(table)
 
@@ -204,10 +204,41 @@ def test_round_floats_silences_float_precision():
 
 
 def test_read_only_column_warns():
-    column = sw.sw_property("Mass")
+    """A caller can register a read-only parameter of their own."""
+    sw.register_parameter(
+        "computed_thing",
+        template="$COMPUTED-THING",
+        summary="Something SOLIDWORKS calculates.",
+        value_kind=sw.ValueKind.READ_ONLY,
+    )
+    column = sw.column("computed_thing")
     table = lenient("M", columns=[column], ignore=("unverified-parameter",))
     table.add_configuration("A", {column: 1.0})
     assert "read-only-column" in codes(table)
+
+
+def test_obsolete_parameter_warns_under_its_own_code():
+    table = lenient("M", columns=[sw.component_visibility("Screw", 2)])
+    table.add_configuration("A")
+    found = codes(table)
+    assert "obsolete-parameter" in found
+    assert "unverified-parameter" not in found
+
+
+def test_expression_in_a_global_variable_warns():
+    """SOLIDWORKS takes only constant decimals for a global variable."""
+    variable = sw.global_variable("width")
+    table = lenient("M", columns=[variable])
+    table.add_configuration("A", {variable: sw.Expression("W/2")})
+    assert "expression-in-global-variable" in codes(table)
+
+
+def test_mass_is_writable_not_read_only():
+    """$SW-MASS overrides the calculated value; it is not read only."""
+    column = sw.mass()
+    table = lenient("M", columns=[column])
+    table.add_configuration("A", {column: 2.5})
+    assert "read-only-column" not in codes(table)
 
 
 # --- strictness ----------------------------------------------------------
@@ -230,11 +261,12 @@ def test_strict_false_downgrades_errors_and_still_writes(tmp_path):
 
 
 def test_ignore_removes_exactly_one_code():
-    table = lenient("M", columns=[sw.color(), sw.raw("$X")])
+    unverified = sw.suppress_new_features()
+    table = lenient("M", columns=[unverified, sw.raw("$X")])
     table.add_configuration("A")
     found = codes(sw.DesignTable(
         "M",
-        [sw.color(), sw.raw("$X")],
+        [unverified, sw.raw("$X")],
         strict=False,
         ignore=("unverified-parameter",),
     ))

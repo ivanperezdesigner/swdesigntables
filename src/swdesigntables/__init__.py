@@ -27,10 +27,13 @@ Then insert it with Insert > Tables > Design Table > From file.
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from swdesigntables.columns import (
     Column,
+    base_part_config,
+    body_material,
+    center_of_mass,
     color,
     column,
     comment,
@@ -42,13 +45,20 @@ from swdesigntables.columns import (
     description,
     dimension,
     display_state,
+    equation_enable,
     global_variable,
+    hole_size,
+    mass,
+    material,
     never_expand_in_bom,
     parent,
     parse_header,
     part_number,
+    profile_size,
     prop,
     raw,
+    sketch_relation_state,
+    skip_instances,
     state,
     suppress_new_components,
     suppress_new_features,
@@ -130,7 +140,17 @@ __all__ = [
     "suppress_new_features",
     "suppress_new_components",
     "sw_property",
+    "mass",
+    "center_of_mass",
     "tolerance",
+    "base_part_config",
+    "material",
+    "body_material",
+    "hole_size",
+    "profile_size",
+    "equation_enable",
+    "sketch_relation_state",
+    "skip_instances",
     "raw",
     # parameters
     "ParameterSpec",

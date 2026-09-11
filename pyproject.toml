@@ -37,6 +37,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/ivanperezdesigner/swdesigntables"
+Documentation = "https://github.com/ivanperezdesigner/swdesigntables/blob/main/DOCUMENTATION.md"
 Issues = "https://github.com/ivanperezdesigner/swdesigntables/issues"
 Changelog = "https://github.com/ivanperezdesigner/swdesigntables/blob/main/CHANGELOG.md"
 

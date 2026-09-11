@@ -16,6 +16,9 @@ pip install swdesigntables
 Only dependency: `openpyxl`. Pure Python, no SOLIDWORKS install needed to
 generate a file.
 
+**[Full reference, with a runnable example and the real output for every
+feature →](https://github.com/ivanperezdesigner/swdesigntables/blob/main/DOCUMENTATION.md)**
+
 ## Quickstart
 
 ```python
@@ -40,13 +43,24 @@ table.add_configuration(
 table.save("brk_master_dt.xlsx")
 ```
 
-Insert the result with **Insert → Tables → Design Table → From file**.
+What comes out:
+
+```
+A1       'Design Table for: BRK-MASTER'
+row 2    [None, 'Length@Boss-Extrude1', '$STATE@HolePattern', '$PRP@Material', '$DESCRIPTION']
+row 3    ['BRK-025', 25, 'S', '6061-T6', 'Short bracket']
+row 4    ['BRK-040', 40, 'U', '6061-T6', 'Long bracket']
+```
+
+Insert the result with **Insert → Tables → Design Table → From file**. That is
+the only step that touches SOLIDWORKS: everything else, including the header
+syntax, comes from this package.
 
 ## What it gets right so you do not have to
 
 | Detail | Why it matters |
 |---|---|
-| `Design Table for: <model>` in A1 | The title cell SOLIDWORKS expects |
+| `Design Table for: <model>` in A1 | The title cell SOLIDWORKS writes itself |
 | Headers start in **B2**, A2 stays empty | Writing from A2 shifts every value one column left |
 | Workbook-level defined name `Family` → `Sheet1!$A$2` | Without it SOLIDWORKS cannot find the table at all |
 | Equation values written as literal text | `cell = "=W/2"` becomes an Excel *formula* with no cached result, and SOLIDWORKS reads an empty parameter |
@@ -72,65 +86,79 @@ a typo loses nothing quietly.
 Every parameter carries a **verification status**, readable at runtime via
 `column.status` and listed by `sw.list_parameters()`.
 
-- **`VERIFIED`** — confirmed against real design table files.
-- **`DOCUMENTED`** — described by SOLIDWORKS documentation, not confirmed here
-  against a live model. Using one emits an `unverified-parameter` warning.
+- **`VERIFIED`** — the SOLIDWORKS help documents this exact spelling on a page
+  of its own.
+- **`DOCUMENTED`** — mentioned by some source, without a page that pins the
+  syntax down.
 - **`UNVERIFIED`** — registered at runtime by you, or otherwise unconfirmed.
+  Using one emits an `unverified-parameter` warning.
+- **`OBSOLETE`** — the SOLIDWORKS help says the parameter is obsolete. Using
+  one emits an `obsolete-parameter` warning.
 
-This distinction is not decoration. Half of the catalogue below has not been
-watched working in SOLIDWORKS by the author, and saying so is more useful than
-implying a certainty that is not there.
-
-### Verified
+### Parts
 
 | Factory | Header | Values |
 |---|---|---|
 | `dimension("Length", "Boss-Extrude1")` | `Length@Boss-Extrude1` | number |
-| `global_variable("width")` | `$VALUE@width@Equations` | number or `Expression` |
-| `state("Draft2")` | `$STATE@Draft2` | `State.SUPPRESSED` / `State.UNSUPPRESSED` |
+| `global_variable("width")` | `$VALUE@width@Equations` | a constant decimal |
+| `state("Draft2")` | `$STATE@Draft2` | `S`/`U`, or `1`/`0` |
 | `prop("Material")` | `$PRP@Material` | text or number |
-| `component_config("Arm", 1)` | `$CONFIGURATION@Arm<1>` | configuration name |
-| `description()` | `$DESCRIPTION` | text |
-| `parent()` | `$PARENT` | configuration name |
-| `display_state()` | `$DISPLAYSTATE` | name |
+| `tolerance("D1", "Extrude1")` | `$TOLERANCE@D1@Extrude1` | tolerance keyword |
+| `material("Bracket")` | `$LIBRARY:MATERIAL@Bracket` | `library:material` |
+| `body_material("Body1", "Bracket")` | `$LIBRARY:MATERIAL@Body1@Bracket` | `library:material` |
+| `hole_size("CBORE1")` | `$HW-SIZE@CBORE1` | a Hole Wizard size |
+| `base_part_config("washer")` | `$CONFIGURATION@washer` | configuration name |
+| `profile_size("Member1")` | `$PROFILE_SIZE@Member1` | profile size |
+| `sketch_relation_state("Fixed1", "Sketch2")` | `$STATE@Fixed1@Sketch2` | `S`/`U` |
+| `equation_enable(1)` | `$ENABLE@1@Equations` | `Y`/`N` |
+| `skip_instances("LPattern1")` | `$SKIP@LPattern1` | `10,1;10,2;` |
+| `mass()` | `$SW-MASS` | number |
+| `center_of_mass()` | `$SW-COG` | `x, y, z` |
 
-### Documented, not verified here
+`state()` also covers sketches (`$STATE@Sketch1`) and lights
+(`$STATE@Directional1`): one syntax, three kinds of target.
+
+### Parts and assemblies
 
 | Factory | Header | Values |
 |---|---|---|
-| `comment()` | `$COMMENT` | text; SOLIDWORKS ignores it |
+| `description()` | `$DESCRIPTION` | text |
+| `parent()` | `$PARENT` | configuration name |
+| `part_number()` | `$PARTNUMBER` | text, or `$D`/`$P`/`$C` |
+| `comment()` | `$COMMENT` | text |
 | `color()` | `$COLOR` | 32-bit RGB integer |
-| `part_number()` | `$PARTNUMBER` | text |
-| `user_notes()` | `$USER_NOTES` | text |
-| `never_expand_in_bom()` | `$NEVER_EXPAND_IN_BOM` | `YesNo` |
-| `tolerance("D1", "Sketch1")` | `$TOLERANCE@D1@Sketch1` | tolerance spec |
-| `component_state("Screw", 2)` | `$STATE@Screw<2>` | `ComponentState` (`S`/`R`) |
-| `component_visibility("Screw", 2)` | `$SHOW@Screw<2>` | `YesNo` |
-| `component_fixed("Screw", 2)` | `$FIXED@Screw<2>` | `YesNo` |
-| `component_display_state("Screw", 2)` | `$DISPLAYSTATE@Screw<2>` | name |
-| `suppress_new_features()` | `$SUPPRESS NEW FEATURES` | `YesNo` |
-| `suppress_new_components()` | `$SUPPRESS NEW COMPONENTS` | `YesNo` |
-| `sw_property("Mass")` | `$SW-Mass` | read-only |
+| `user_notes()` | `$USER_NOTES` | text; SOLIDWORKS ignores the column |
 
-Two spellings are genuinely uncertain because sources disagree on punctuation:
-`$USER_NOTES` vs `$USERNOTES`, and `$NEVER_EXPAND_IN_BOM` vs
-`$NEVER-EXPAND-IN-BOM`. Header syntax is case insensitive in SOLIDWORKS, but
-that does not extend to hyphens and underscores. Both live as single constants
-in `Vocabulary`, so correcting one is a one-line change.
+### Assemblies
 
-**Sheet metal (`$SM-…`) is deliberately absent.** No reliable source confirmed
+| Factory | Header | Values |
+|---|---|---|
+| `component_config("Arm", 1)` | `$CONFIGURATION@Arm<1>` | configuration name |
+| `component_state("Screw", 2)` | `$STATE@Screw<2>` | `S`/`R` |
+| `component_fixed("Screw")` | `$FIXED@Screw` | `Y`/`N` |
+| `display_state()` | `$DISPLAYSTATE` | display state name |
+| `never_expand_in_bom()` | `$NEVER_EXPAND_IN_BOM` | `Y`/`N` |
+
+`$CONFIGURATION@X` means two different things, and the instance number tells
+them apart: with one it is a component of an assembly, without one it is the
+base part of a part document.
+
+### Not confirmed, and obsolete
+
+| Factory | Header | Status |
+|---|---|---|
+| `suppress_new_features()` | `$SUPPRESS NEW FEATURES` | unverified |
+| `suppress_new_components()` | `$SUPPRESS NEW COMPONENTS` | unverified |
+| `component_display_state("Screw", 2)` | `$DISPLAYSTATE@Screw<2>` | unverified |
+| `component_visibility("Screw", 2)` | `$SHOW@Screw<2>` | **obsolete** |
+
+`$SHOW` is obsolete in the SOLIDWORKS help itself; component visibility belongs
+to display states now. It stays in the catalogue only so an old table still
+round-trips through `parse_header`.
+
+**Sheet metal (`$SM-…`) is deliberately absent.** No source consulted confirms
 its syntax, and shipping an invented factory is worse than shipping none. Use
 `raw()` or `register_parameter()`.
-
-### Confirming a parameter yourself
-
-The syntax is not worth guessing at. On a **copy** of the model:
-
-1. **Insert → Tables → Design Table → Auto-create**
-2. SOLIDWORKS opens an embedded sheet with the header row it proposes
-3. Copy that row, close without saving, delete the copy
-
-A minute of checking beats an afternoon of columns the model ignores.
 
 ### Nothing is out of reach
 
@@ -179,14 +207,10 @@ To start from an empty but valid file:
 sw.blank_table("BRK-MASTER", [length, width], path="skeleton.xlsx")
 ```
 
-That is also the cheapest way to find out whether SOLIDWORKS accepts a set of
-headers: generate the skeleton, insert it with **From file**, and see what it
-says before writing a generator around it.
-
 ## Suppression: `S`/`U` or `1`/`0`
 
-Documentation describes `S` and `U`. Working tables in the wild use `1` and `0`.
-Both are supported and neither is silently rewritten:
+SOLIDWORKS documents both spellings for feature suppression, and neither is
+silently rewritten into the other:
 
 ```python
 sw.DesignTable(..., state_format=sw.StateFormat.NUMERIC)   # writes 1 / 0
@@ -225,7 +249,8 @@ code. Errors stop the write, warnings do not.
 A selection of what is caught: duplicate columns and configurations,
 configuration names containing `/ \ : * ? " < > |`, values for undeclared
 columns, `$PARENT` cycles and children placed before their parent, the reserved
-`_SWX` sheet name, a state letter in a numeric column, and
+`_SWX` sheet name, a state letter in a numeric column, an equation in a global
+variable column, an obsolete or unverified parameter, and
 `equations-dimension-conflict` — driving both a dimension and a global variable
 of the same name, which usually means someone expected the dimension column to
 win an argument it cannot win.

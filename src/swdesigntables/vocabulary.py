@@ -18,10 +18,11 @@ __all__ = ["Vocabulary", "ENGLISH", "DEFAULT_VOCABULARY"]
 class Vocabulary:
     """The header literals for one SOLIDWORKS interface language.
 
-    Only :data:`ENGLISH` ships verified. To support another language, copy it
-    with the prefixes replaced and pass the result to
-    :class:`~swdesigntables.table.DesignTable`. Confirm each prefix with the
-    Auto-create recipe in the README before trusting it.
+    Only :data:`ENGLISH` ships verified. Translated headers are a real
+    SOLIDWORKS feature: the same parameter is ``$DESCRIPTION`` in English,
+    ``$BESCHREIBUNG`` in German and ``$DESCRIZIONE`` in Italian. To support
+    another language, copy this vocabulary with the prefixes replaced and pass
+    the result to :class:`~swdesigntables.table.DesignTable`.
     """
 
     value: str = "$VALUE"
@@ -36,15 +37,21 @@ class Vocabulary:
     color: str = "$COLOR"
     part_number: str = "$PARTNUMBER"
     tolerance: str = "$TOLERANCE"
-    show: str = "$SHOW"
     fixed: str = "$FIXED"
-    # Sources disagree on the punctuation of the next three. They are single
-    # constants precisely so that correcting one is a one-line change.
     user_notes: str = "$USER_NOTES"
     never_expand_in_bom: str = "$NEVER_EXPAND_IN_BOM"
+    enable: str = "$ENABLE"
+    library_material: str = "$LIBRARY:MATERIAL"
+    hole_size: str = "$HW-SIZE"
+    profile_size: str = "$PROFILE_SIZE"
+    skip: str = "$SKIP"
+    sw_property: str = "$SW-"
+    # Obsolete: SOLIDWORKS replaced component visibility with display states.
+    show: str = "$SHOW"
+    # Not described by the SOLIDWORKS documentation in any version consulted.
+    # They are single constants so that correcting one is a one-line change.
     suppress_new_features: str = "$SUPPRESS NEW FEATURES"
     suppress_new_components: str = "$SUPPRESS NEW COMPONENTS"
-    sw_property: str = "$SW-"
 
 
 ENGLISH: Vocabulary = Vocabulary()

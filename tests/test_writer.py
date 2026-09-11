@@ -67,7 +67,7 @@ def test_swx_sheet_is_never_authored(simple_table, reload_table):
 def test_expression_is_written_as_text_not_a_formula(reload_table):
     """A formula cell has no cached result, so SOLIDWORKS reads nothing."""
     shrink = sw.global_variable("shrink")
-    table = sw.DesignTable("M", [shrink])
+    table = sw.DesignTable("M", [shrink], ignore=("expression-in-global-variable",))
     table.add_configuration("A", {shrink: sw.Expression("rate * Length")})
     sheet = reload_table(table)["Sheet1"]
     assert sheet["B3"].value == "=rate * Length"

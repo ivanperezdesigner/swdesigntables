@@ -8,15 +8,17 @@ new module.
 Verification status is part of the public contract:
 
 ``VERIFIED``
-    Confirmed against real design table files or the verified reference.
+    The SOLIDWORKS help documents this exact spelling on a page of its own.
 ``DOCUMENTED``
-    Described by SOLIDWORKS documentation, not confirmed here against a model.
+    Mentioned by some SOLIDWORKS source, without a page that pins the syntax.
 ``UNVERIFIED``
     Registered at runtime by a caller, or otherwise unconfirmed.
+``OBSOLETE``
+    The SOLIDWORKS help says the parameter is obsolete.
 
-Using anything other than ``VERIFIED`` emits an ``unverified-parameter``
-warning. Confirm one with the Auto-create recipe in the README, then silence
-that code.
+Using anything other than ``VERIFIED`` emits a warning: ``unverified-parameter``
+for the first three, ``obsolete-parameter`` for the last. Both can be silenced
+per code with ``ignore=``.
 """
 
 from __future__ import annotations
@@ -56,11 +58,18 @@ class ValueKind(Enum):
 
 
 class Status(Enum):
-    """How well confirmed a parameter's syntax is."""
+    """How well confirmed a parameter's syntax is.
+
+    VERIFIED means the SOLIDWORKS help documents this exact spelling on a page
+    of its own. OBSOLETE means the help says so in as many words. UNVERIFIED
+    means nothing authoritative was found, including parameters you register
+    yourself at runtime.
+    """
 
     VERIFIED = "verified"
     DOCUMENTED = "documented"
     UNVERIFIED = "unverified"
+    OBSOLETE = "obsolete"
 
 
 # A header segment that must not swallow the '@' separators.
@@ -151,11 +160,14 @@ _CATALOGUE: list[ParameterSpec] = [
     ParameterSpec(
         name="tolerance",
         template="{tolerance}@{dimension}@{feature}",
-        summary="Set the tolerance of one dimension per configuration.",
+        summary=(
+            "Set the tolerance of one dimension per configuration. The value "
+            "is a keyword such as SYMMETRIC;0.5 or LIMIT;0.2;0.1."
+        ),
         fields=("dimension", "feature"),
         vocab_fields=(("tolerance", "tolerance"),),
         value_kind=ValueKind.TEXT,
-        status=Status.DOCUMENTED,
+        status=Status.VERIFIED,
         priority=10,
     ),
     ParameterSpec(
@@ -166,40 +178,48 @@ _CATALOGUE: list[ParameterSpec] = [
         vocab_fields=(("state", "state"),),
         field_patterns=(("component", _INSTANCE),),
         value_kind=ValueKind.COMPONENT_STATE,
-        status=Status.DOCUMENTED,
+        status=Status.VERIFIED,
         priority=15,
     ),
     ParameterSpec(
         name="component_visibility",
         template="{show}@{component}",
-        summary="Show or hide an assembly component.",
+        summary=(
+            "Show or hide an assembly component. OBSOLETE: the SOLIDWORKS "
+            "help states that $SHOW is obsolete. Use display states instead."
+        ),
         fields=("component",),
         vocab_fields=(("show", "show"),),
         field_patterns=(("component", _INSTANCE),),
         value_kind=ValueKind.YES_NO,
-        status=Status.DOCUMENTED,
+        status=Status.OBSOLETE,
         priority=15,
     ),
     ParameterSpec(
         name="component_fixed",
         template="{fixed}@{component}",
-        summary="Fix or float an assembly component.",
+        summary=(
+            "Fix or float an assembly component. The documented syntax names "
+            "the component without an instance number."
+        ),
         fields=("component",),
         vocab_fields=(("fixed", "fixed"),),
-        field_patterns=(("component", _INSTANCE),),
         value_kind=ValueKind.YES_NO,
-        status=Status.DOCUMENTED,
+        status=Status.VERIFIED,
         priority=15,
     ),
     ParameterSpec(
         name="component_display_state",
         template="{display_state}@{component}",
-        summary="Choose the display state of an assembly component.",
+        summary=(
+            "Choose the display state of one component. Not documented: the "
+            "help describes $DISPLAYSTATE for the configuration only."
+        ),
         fields=("component",),
         vocab_fields=(("display_state", "display_state"),),
         field_patterns=(("component", _INSTANCE),),
         value_kind=ValueKind.TEXT,
-        status=Status.DOCUMENTED,
+        status=Status.UNVERIFIED,
         priority=15,
     ),
     ParameterSpec(
@@ -208,9 +228,111 @@ _CATALOGUE: list[ParameterSpec] = [
         summary="Choose which configuration of a component an assembly uses.",
         fields=("component",),
         vocab_fields=(("configuration", "configuration"),),
+        field_patterns=(("component", _INSTANCE),),
         value_kind=ValueKind.CONFIG_NAME,
         status=Status.VERIFIED,
         priority=16,
+    ),
+    ParameterSpec(
+        name="base_part_config",
+        template="{configuration}@{part}",
+        summary=(
+            "Choose which configuration of a base part a part document uses. "
+            "Same prefix as component_config, but no instance number: in a "
+            "part it names the base part, in an assembly a component."
+        ),
+        fields=("part",),
+        vocab_fields=(("configuration", "configuration"),),
+        field_patterns=(("part", _FEATURE),),
+        value_kind=ValueKind.CONFIG_NAME,
+        status=Status.VERIFIED,
+        priority=17,
+    ),
+    ParameterSpec(
+        name="material",
+        template="{library_material}@{part}",
+        summary=(
+            "Set the material of a part. The cell holds the library and the "
+            "material, as in 'SOLIDWORKS Materials:Plain Carbon Steel'."
+        ),
+        fields=("part",),
+        vocab_fields=(("library_material", "library_material"),),
+        field_patterns=(("part", _FEATURE),),
+        value_kind=ValueKind.TEXT,
+        status=Status.VERIFIED,
+        priority=12,
+    ),
+    ParameterSpec(
+        name="body_material",
+        template="{library_material}@{body}@{part}",
+        summary="Set the material of one body of a multibody part.",
+        fields=("body", "part"),
+        vocab_fields=(("library_material", "library_material"),),
+        value_kind=ValueKind.TEXT,
+        status=Status.VERIFIED,
+        priority=11,
+    ),
+    ParameterSpec(
+        name="hole_size",
+        template="{hole_size}@{feature}",
+        summary="Set the size of a Hole Wizard hole, as listed in its PropertyManager.",
+        fields=("feature",),
+        vocab_fields=(("hole_size", "hole_size"),),
+        value_kind=ValueKind.TEXT,
+        status=Status.VERIFIED,
+        priority=12,
+    ),
+    ParameterSpec(
+        name="profile_size",
+        template="{profile_size}@{target}",
+        summary=(
+            "Set the profile size of a weldment or structure system member. "
+            "The target is a feature name or a member name."
+        ),
+        fields=("target",),
+        vocab_fields=(("profile_size", "profile_size"),),
+        value_kind=ValueKind.TEXT,
+        status=Status.VERIFIED,
+        priority=12,
+    ),
+    ParameterSpec(
+        name="equation_enable",
+        template="{enable}@{relation_id}@{equations}",
+        summary=(
+            "Enable or disable one equation across configurations, by the "
+            "Relation ID shown in the Equations dialog box."
+        ),
+        fields=("relation_id",),
+        vocab_fields=(("enable", "enable"), ("equations", "equations")),
+        value_kind=ValueKind.YES_NO,
+        status=Status.VERIFIED,
+        priority=10,
+    ),
+    ParameterSpec(
+        name="sketch_relation_state",
+        template="{state}@{relation}@{sketch}",
+        summary=(
+            "Suppress or unsuppress one sketch relation, as in "
+            "$STATE@Fixed1@Sketch2."
+        ),
+        fields=("relation", "sketch"),
+        vocab_fields=(("state", "state"),),
+        value_kind=ValueKind.STATE,
+        status=Status.VERIFIED,
+        priority=14,
+    ),
+    ParameterSpec(
+        name="skip_instances",
+        template="{skip}@{pattern}",
+        summary=(
+            "Skip pattern instances. The value is a list of instance "
+            "coordinates separated by semicolons, as in '10,1;10,2;'."
+        ),
+        fields=("pattern",),
+        vocab_fields=(("skip", "skip"),),
+        value_kind=ValueKind.TEXT,
+        status=Status.VERIFIED,
+        priority=15,
     ),
     ParameterSpec(
         name="state",
@@ -236,11 +358,15 @@ _CATALOGUE: list[ParameterSpec] = [
     ParameterSpec(
         name="sw_property",
         template="{sw_property}{name}",
-        summary="A SOLIDWORKS-computed property such as Mass or COG. Read only.",
+        summary=(
+            "Override a SOLIDWORKS-computed mass property. $SW-MASS takes a "
+            "mass, $SW-COG takes 'x, y, z'. A blank cell keeps the "
+            "calculated value."
+        ),
         fields=("name",),
         vocab_fields=(("sw_property", "sw_property"),),
-        value_kind=ValueKind.READ_ONLY,
-        status=Status.DOCUMENTED,
+        value_kind=ValueKind.ANY,
+        status=Status.VERIFIED,
         priority=25,
     ),
     ParameterSpec(
@@ -276,7 +402,7 @@ _CATALOGUE: list[ParameterSpec] = [
         summary="A column SOLIDWORKS ignores, for notes to whoever reads the sheet.",
         vocab_fields=(("comment", "comment"),),
         value_kind=ValueKind.TEXT,
-        status=Status.DOCUMENTED,
+        status=Status.VERIFIED,
         priority=5,
     ),
     ParameterSpec(
@@ -285,7 +411,7 @@ _CATALOGUE: list[ParameterSpec] = [
         summary="The configuration colour, as a 32-bit RGB integer.",
         vocab_fields=(("color", "color"),),
         value_kind=ValueKind.COLOR,
-        status=Status.DOCUMENTED,
+        status=Status.VERIFIED,
         priority=5,
     ),
     ParameterSpec(
@@ -294,7 +420,7 @@ _CATALOGUE: list[ParameterSpec] = [
         summary="The part number the bill of materials shows for this configuration.",
         vocab_fields=(("part_number", "part_number"),),
         value_kind=ValueKind.TEXT,
-        status=Status.DOCUMENTED,
+        status=Status.VERIFIED,
         priority=5,
     ),
     ParameterSpec(
@@ -303,7 +429,7 @@ _CATALOGUE: list[ParameterSpec] = [
         summary="Free text notes stored on the configuration.",
         vocab_fields=(("user_notes", "user_notes"),),
         value_kind=ValueKind.TEXT,
-        status=Status.DOCUMENTED,
+        status=Status.VERIFIED,
         priority=5,
     ),
     ParameterSpec(
@@ -312,7 +438,7 @@ _CATALOGUE: list[ParameterSpec] = [
         summary="Keep a subassembly from being expanded in the bill of materials.",
         vocab_fields=(("never_expand_in_bom", "never_expand_in_bom"),),
         value_kind=ValueKind.YES_NO,
-        status=Status.DOCUMENTED,
+        status=Status.VERIFIED,
         priority=5,
     ),
     ParameterSpec(
@@ -321,7 +447,7 @@ _CATALOGUE: list[ParameterSpec] = [
         summary="Suppress features added to the model after this configuration exists.",
         vocab_fields=(("suppress_new_features", "suppress_new_features"),),
         value_kind=ValueKind.YES_NO,
-        status=Status.DOCUMENTED,
+        status=Status.UNVERIFIED,
         priority=5,
     ),
     ParameterSpec(
@@ -330,7 +456,7 @@ _CATALOGUE: list[ParameterSpec] = [
         summary="Suppress components added to the assembly after this configuration exists.",
         vocab_fields=(("suppress_new_components", "suppress_new_components"),),
         value_kind=ValueKind.YES_NO,
-        status=Status.DOCUMENTED,
+        status=Status.UNVERIFIED,
         priority=5,
     ),
     # The catch-all, tried last: anything shaped Name@Target is a dimension.

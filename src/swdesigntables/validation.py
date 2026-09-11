@@ -156,15 +156,24 @@ def _check_columns(table: DesignTable) -> list[Issue]:
             )
         else:
             seen[lowered] = index
-        if col.status is not Status.VERIFIED:
+        if col.status is Status.OBSOLETE:
+            issues.append(
+                _warn(
+                    "obsolete-parameter",
+                    f"Parameter {col.spec.name!r} is obsolete: the SOLIDWORKS "
+                    "help says so, and recent versions no longer list it.",
+                    header,
+                )
+            )
+        elif col.status is not Status.VERIFIED:
             issues.append(
                 _warn(
                     "unverified-parameter"
                     if col.spec.name != "raw"
                     else "raw-column",
-                    f"Parameter {col.spec.name!r} is {col.status.value}, not "
-                    "confirmed against a real model. Verify it with "
-                    "Insert > Tables > Design Table > Auto-create.",
+                    f"Parameter {col.spec.name!r} is {col.status.value}: its "
+                    "syntax is not pinned down by SOLIDWORKS documentation, so "
+                    "the column may be ignored on rebuild.",
                     header,
                 )
             )
@@ -379,6 +388,17 @@ def _check_one_value(
         ]
     if kind in (ValueKind.NUMBER, ValueKind.COLOR):
         if isinstance(value, Expression):
+            if col.spec.name == "global_variable":
+                return [
+                    _warn(
+                        "expression-in-global-variable",
+                        "SOLIDWORKS accepts only constant decimal values for a "
+                        "global variable in a design table. To drive it by "
+                        "equation, drop this column and write the equation in "
+                        "Tools > Equations.",
+                        where,
+                    )
+                ]
             return []
         if not _is_number(value):
             return [
