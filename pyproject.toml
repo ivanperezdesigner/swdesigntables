@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "swdesigntables"
+dynamic = ["version"]
+description = "Build SOLIDWORKS design tables from Python, with typed headers and validation."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Ivan Perez" }]
+keywords = ["solidworks", "design table", "cad", "configurations", "xlsx", "openpyxl"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Manufacturing",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
+]
+dependencies = ["openpyxl>=3.1,<4"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "types-openpyxl",
+    "build>=1.2",
+    "twine>=5",
+]
+
+[project.urls]
+Homepage = "https://github.com/ivanperezdesigner/swdesigntables"
+Issues = "https://github.com/ivanperezdesigner/swdesigntables/issues"
+Changelog = "https://github.com/ivanperezdesigner/swdesigntables/blob/main/CHANGELOG.md"
+
+[tool.hatch.version]
+path = "src/swdesigntables/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/swdesigntables"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error::swdesigntables.errors.DesignTableWarning"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src"]
+strict = false
+warn_unused_ignores = false
+warn_redundant_casts = true
+disallow_untyped_defs = true
