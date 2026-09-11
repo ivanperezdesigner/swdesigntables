@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-11
+
+### Added
+
+- Yes/no columns accept `True` and `False`, and write `Y` and `N`. Writing the
+  bool itself would put `TRUE` in the cell, which SOLIDWORKS does not read, so
+  the conversion happens in the writer and only where the column is a yes/no
+  one. `sw.YES` and `sw.NO` join `sw.SUPPRESSED` and `sw.UNSUPPRESSED` as
+  shortcuts. `YesNo.YES` keeps working; nothing already written breaks.
+- `normalize()` takes an optional `value_kind`, which is how it knows a yes/no
+  column from any other. A value with no column behind it, such as a cell of an
+  extra sheet, passes with `value_kind=None` and is untouched.
+
+Suppression columns are deliberately excluded: `True` is ambiguous there, so
+`$STATE@` still wants a `State`, `1`/`0`, or `State.from_bool(...)`.
+
 ## [0.2.1] - 2026-09-11
 
 ### Added
@@ -124,7 +140,8 @@ First release.
   `Vocabulary`.
 - Write only. No reading of existing tables, no COM integration, no CLI.
 
-[Unreleased]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ivanperezdesigner/swdesigntables/releases/tag/v0.1.0

@@ -220,6 +220,19 @@ sw.State.from_legacy_int(1)                                # -> State.SUPPRESSED
 Component suppression is a different vocabulary — `ComponentState` is `S`/`R`,
 where `R` is Resolved — and mixing them up is caught.
 
+## Yes/no columns take a bool
+
+```python
+table.add_configuration("A", {fixed: True,  bom: sw.YES})
+table.add_configuration("B", {fixed: False, bom: sw.NO})
+```
+
+Both write `Y` and `N`. Writing the bool itself would put `TRUE` in the cell,
+which SOLIDWORKS does not read, so the conversion happens on the way out — and
+only in a yes/no column. Suppression is left out on purpose: `True` reads just
+as easily as 'this feature is on', so `$STATE@` still wants a `State`, `1`/`0`,
+or `State.from_bool(...)`.
+
 ## Migrating a script that already has header strings
 
 `parse_header` turns an existing header string into the typed column that

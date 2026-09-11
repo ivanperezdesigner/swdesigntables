@@ -212,6 +212,30 @@ sw.State.from_legacy_int(1)    -> State.SUPPRESSED
 sw.YesNo.from_bool(False)      -> YesNo.NO
 ```
 
+### Yes/no columns take a bool
+
+`$FIXED@`, `$NEVER_EXPAND_IN_BOM`, `$ENABLE@` and the other yes/no columns
+accept `True` and `False`, and the package writes `Y` and `N`. `sw.YES` and
+`sw.NO` are there for when you would rather be explicit, and `YesNo.YES` still
+works.
+
+```python
+table.add_configuration("A", {eq: True,  bom: sw.YES})
+table.add_configuration("B", {eq: False, bom: sw.NO})
+
+row 2  [None, '$ENABLE@2@Equations', '$NEVER_EXPAND_IN_BOM']
+row 3  ['A', 'Y', 'Y']
+row 4  ['B', 'N', 'N']
+```
+
+Writing the bool straight into the cell would put `TRUE` there, which
+SOLIDWORKS does not read, so the conversion happens on the way out and only in
+a yes/no column. Elsewhere a bool is left alone.
+
+Suppression columns are deliberately left out of this. `True` could be read as
+'this feature is on' just as easily as 'suppressed', so `$STATE@` still wants a
+`State`, `1`/`0`, or `State.from_bool(...)` where you say which you mean.
+
 ### Equations
 
 An equation value is written as literal text, never as an Excel formula: a

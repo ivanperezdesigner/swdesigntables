@@ -27,7 +27,7 @@ Then insert it with Insert > Tables > Design Table > From file.
 
 from __future__ import annotations
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 
 from swdesigntables.columns import (
     Column,
@@ -94,8 +94,10 @@ from swdesigntables.table import (
 from swdesigntables.template import TableTemplate, blank_table
 from swdesigntables.validation import Issue, Severity, ValidationReport
 from swdesigntables.values import (
+    NO,
     SUPPRESSED,
     UNSUPPRESSED,
+    YES,
     CellValue,
     ComponentState,
     Expression,
@@ -169,6 +171,8 @@ __all__ = [
     "CellValue",
     "SUPPRESSED",
     "UNSUPPRESSED",
+    "YES",
+    "NO",
     # vocabulary
     "Vocabulary",
     "ENGLISH",

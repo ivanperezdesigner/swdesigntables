@@ -72,6 +72,7 @@ def build_workbook(table: DesignTable) -> Workbook:
                 value,
                 state_format=table.state_format,
                 round_floats=table.round_floats,
+                value_kind=col.value_kind,
             )
             if payload is None:
                 continue

@@ -378,11 +378,11 @@ def _check_one_value(
                 where,
             )
         ]
-    if kind is ValueKind.YES_NO and not isinstance(value, YesNo):
+    if kind is ValueKind.YES_NO and not isinstance(value, (YesNo, bool)):
         return [
             _error(
                 "wrong-value-type",
-                f"Expected YesNo (Y/N), got {value!r}.",
+                f"Expected YesNo (Y/N) or a bool, got {value!r}.",
                 where,
             )
         ]

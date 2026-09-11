@@ -68,3 +68,47 @@ def test_round_floats_applies_to_floats_only():
 def test_unsupported_type_is_refused():
     with pytest.raises(TypeError, match="Unsupported cell value"):
         normalize(object())
+
+
+# --- yes/no columns take a bool ------------------------------------------
+
+
+YES_NO_COLUMNS = [
+    sw.never_expand_in_bom(),
+    sw.component_fixed("Screw"),
+    sw.equation_enable(2),
+]
+
+
+@pytest.mark.parametrize("column", YES_NO_COLUMNS)
+def test_a_bool_becomes_y_or_n(column, reload_table):
+    """True and False are the readable spelling; Excel must still see Y/N."""
+    table = sw.DesignTable("M", [column])
+    table.add_configuration("A", {column: True})
+    table.add_configuration("B", {column: False})
+    sheet = reload_table(table)["Sheet1"]
+    assert sheet["B3"].value == "Y"
+    assert sheet["B4"].value == "N"
+    assert isinstance(sheet["B3"].value, str)
+
+
+def test_yes_and_no_shortcuts_match_the_enum():
+    assert sw.YES is sw.YesNo.YES
+    assert sw.NO is sw.YesNo.NO
+
+
+def test_a_bool_outside_a_yes_no_column_is_left_alone(reload_table):
+    """The conversion is scoped to Y/N columns, never to text or numbers."""
+    note = sw.prop("Note")
+    table = sw.DesignTable("M", [note])
+    table.add_configuration("A", {note: True})
+    assert reload_table(table)["Sheet1"]["B3"].value is True
+
+
+def test_a_bool_in_a_state_column_still_warns():
+    """True is ambiguous for suppression, so it stays out of $STATE."""
+    feature = sw.state("Draft2")
+    table = sw.DesignTable("M", [feature], strict=False)
+    table.add_configuration("A", {feature: True})
+    codes = {issue.code for issue in table.validate().issues}
+    assert "non-state-value-in-state-column" in codes

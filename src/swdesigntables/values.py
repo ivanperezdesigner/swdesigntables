@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 
+from swdesigntables.parameters import ValueKind
+
 __all__ = [
     "State",
     "ComponentState",
@@ -23,6 +25,8 @@ __all__ = [
     "CellPayload",
     "SUPPRESSED",
     "UNSUPPRESSED",
+    "YES",
+    "NO",
     "normalize",
 ]
 
@@ -118,6 +122,8 @@ CellPayload = str | int | float | bool | None
 
 SUPPRESSED = State.SUPPRESSED
 UNSUPPRESSED = State.UNSUPPRESSED
+YES = YesNo.YES
+NO = YesNo.NO
 
 
 def normalize(
@@ -125,14 +131,23 @@ def normalize(
     *,
     state_format: StateFormat = StateFormat.LETTERS,
     round_floats: int | None = None,
+    value_kind: ValueKind | None = None,
 ) -> tuple[CellPayload, bool]:
     """Convert a user value into what the writer should put in the cell.
 
     Returns the payload and whether it must be forced to a string cell (which
     is how an Expression avoids becoming an Excel formula).
+
+    ``value_kind`` is the kind of the column the value belongs to, when there
+    is one. It is what lets True and False become Y and N in a yes/no column,
+    and only there: Excel would otherwise write TRUE, which SOLIDWORKS does
+    not read. A value with no column behind it, such as a cell of an extra
+    sheet, passes with ``value_kind=None``.
     """
     if value is None:
         return None, False
+    if value_kind is ValueKind.YES_NO and isinstance(value, bool):
+        return YesNo.from_bool(value).value, False
     if isinstance(value, Expression):
         return value.render(), True
     if isinstance(value, State):
