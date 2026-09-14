@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-14
+
 ### Documentation
 
 - Every issue code is now listed with its severity, and with which of them are
@@ -17,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   table. `parent-not-found` is an error and it stops the write, which neither
   document mentioned. A derived configuration whose parent lives only in the
   model cannot be expressed; the parent has to be added as a row.
+
+No behaviour changed. This release exists so the page on PyPI carries the
+corrected README.
 
 ## [0.3.0] - 2026-09-11
 
@@ -151,7 +156,8 @@ First release.
   `Vocabulary`.
 - Write only. No reading of existing tables, no COM integration, no CLI.
 
-[Unreleased]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ivanperezdesigner/swdesigntables/compare/v0.1.0...v0.2.0
