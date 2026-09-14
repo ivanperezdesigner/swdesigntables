@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Documentation
+
+- Every issue code is now listed with its severity, and with which of them are
+  raised at the call site rather than by `validate()`. Eighteen of the
+  twenty-six were never named anywhere, while the documentation told readers to
+  match on the code.
+- `$PARENT` is documented as what it is: the parent has to be a row of the same
+  table. `parent-not-found` is an error and it stops the write, which neither
+  document mentioned. A derived configuration whose parent lives only in the
+  model cannot be expressed; the parent has to be added as a row.
+
 ## [0.3.0] - 2026-09-11
 
 ### Added

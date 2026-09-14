@@ -397,6 +397,28 @@ after:   ['PARENT', 'CHILD']    validate -> []
 `sort_by_parent()` is never automatic. Row order is configuration order in the
 SOLIDWORKS tree, and changing it silently is not this library's call.
 
+### The parent has to be a row of this table
+
+`$PARENT` is not a free text column. The name you give has to belong to another
+configuration in the same table, and an unknown one is an error that stops the
+write:
+
+```python
+table.add_configuration("CHILD", {L: 1}, parent="NOT-A-ROW")
+table.save("x.xlsx")
+
+  ValidationError: Design table has 1 error(s):
+    - error: parent-not-found [configuration 'CHILD']: Parent 'NOT-A-ROW' is
+      not a configuration in this table.
+```
+
+Three things are checked, all of them errors: the parent exists as a row
+(`parent-not-found`), it comes before its child (`parent-after-child`), and no
+two configurations are each other's parent (`parent-cycle`).
+
+If the parent is a configuration that already exists in the model but is not in
+this table, there is no way to say so from here. Add it as a row.
+
 ---
 
 ## 6. Extra sheets and defined names
@@ -476,9 +498,40 @@ warning: expression-in-global-variable [configuration 'A', column '$VALUE@width@
          the equation in Tools > Equations.
 ```
 
-Also caught: duplicate columns and configurations, values for undeclared
-columns, `$PARENT` cycles, the reserved `_SWX` sheet name, a state letter in a
-numeric column, and a float carrying more decimals than the model will show.
+### Every issue code
+
+Errors stop the write. Warnings do not. The five marked *at the call site* are
+raised by the method that causes them, in strict mode, rather than waiting for
+`validate()`.
+
+| Code | Severity | What it means |
+|---|---|---|
+| `empty-model-name` | error | The model name for A1 is empty |
+| `no-columns` | error | The table has no columns |
+| `no-configurations` | error | The table has no configuration rows |
+| `duplicate-column` | error, at the call site | Two columns render the same header; SOLIDWORKS reads the first |
+| `duplicate-configuration` | error, at the call site | Two rows share a configuration name |
+| `unknown-column` | error, at the call site | A value was supplied for a column that was never declared |
+| `reserved-sheet-name` | error, at the call site | `_SWX` belongs to SOLIDWORKS |
+| `reserved-defined-name` | error, at the call site | `Family` and `_SWX_0` belong to SOLIDWORKS |
+| `duplicate-sheet-name` | error | Two extra sheets share a name |
+| `invalid-configuration-name` | error | The name holds `/ \ : * ? " < > \|`, or is over 255 characters |
+| `missing-value` | error | No value for a column, with `missing=MissingValue.ERROR` |
+| `wrong-value-type` | error | A yes/no column got something that is neither `YesNo` nor a bool |
+| `parent-not-found` | error | `$PARENT` names a configuration that is not a row of this table |
+| `parent-after-child` | error | A derived configuration is placed above its parent |
+| `parent-cycle` | error | Two or more configurations are each other's parent |
+| `long-configuration-name` | warning | Over 128 characters |
+| `suspicious-feature-name` | warning | Stray whitespace, or an embedded `@` |
+| `unverified-parameter` | warning | The parameter's syntax is not pinned down by documentation |
+| `obsolete-parameter` | warning | The SOLIDWORKS help calls the parameter obsolete |
+| `raw-column` | warning | A `raw()` header, written with no checking at all |
+| `read-only-column` | warning | A value in a column the model computes |
+| `text-in-numeric-column` | warning | Text where a number belongs |
+| `non-state-value-in-state-column` | warning | Something that is neither a `State` nor `1`/`0` |
+| `expression-in-global-variable` | warning | An equation where SOLIDWORKS wants a constant decimal |
+| `equations-dimension-conflict` | warning | A dimension and a global variable of the same name are both driven |
+| `float-precision` | warning | More decimals than the model will show; consider `round_floats` |
 
 ### What validation cannot do
 

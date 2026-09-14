@@ -261,12 +261,20 @@ code. Errors stop the write, warnings do not.
 
 A selection of what is caught: duplicate columns and configurations,
 configuration names containing `/ \ : * ? " < > |`, values for undeclared
-columns, `$PARENT` cycles and children placed before their parent, the reserved
-`_SWX` sheet name, a state letter in a numeric column, an equation in a global
-variable column, an obsolete or unverified parameter, and
+columns, the reserved `_SWX` sheet name, a state letter in a numeric column, an
+equation in a global variable column, an obsolete or unverified parameter, and
 `equations-dimension-conflict` — driving both a dimension and a global variable
 of the same name, which usually means someone expected the dimension column to
 win an argument it cannot win.
+
+`$PARENT` gets three checks of its own, all errors: the parent has to be a row
+of the same table (`parent-not-found`), it has to come before its child
+(`parent-after-child`), and no two configurations may be each other's parent
+(`parent-cycle`). A derived configuration whose parent is not in the table
+cannot be expressed here; add the parent as a row.
+
+[The reference lists every issue code with its
+severity.](https://github.com/ivanperezdesigner/swdesigntables/blob/main/DOCUMENTATION.md#every-issue-code)
 
 Three levels of strictness:
 
